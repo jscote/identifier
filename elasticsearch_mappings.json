@@ -1,0 +1,27 @@
+/**
+ * Created by jean-sebastiencote on 2/2/15.
+ */
+{
+  "command": "POST / identifiers:",
+  "content": {
+    "mappings": {
+      "supportedType": {
+        "properties": {
+          "identifierType": {
+            "type": "string"
+          },
+          "abbreviation": {
+            "type": "string"
+          }
+        }
+      },
+      "identifier": {
+        "properties": {
+          "identifier": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

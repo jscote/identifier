@@ -1,13 +1,15 @@
 {
   "name": "jsai-identifier",
   "version": "0.0.1",
-  "description" : "utility for managing identifiers.",
-  "author" : {
-    "name" : "Jean-Sebastien Cote",
-    "email" : "jean.sebastien.cote@gmail.com"
+  "description": "utility for managing identifiers.",
+  "author": {
+    "name": "Jean-Sebastien Cote",
+    "email": "jean.sebastien.cote@gmail.com"
   },
   "dependencies": {
-    "lodash": "^2.4.1"
+    "elasticsearch": "^3.1.3",
+    "lodash": "^3.0.1",
+    "q": "^1.1.2"
   },
   "repository": {
     "type": "git",
@@ -16,5 +18,4 @@
   "engines": {
     "node": "*"
   }
-
 }
