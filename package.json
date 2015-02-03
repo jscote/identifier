@@ -1,0 +1,20 @@
+{
+  "name": "jsai-identifier",
+  "version": "0.0.1",
+  "description" : "utility for managing identifiers.",
+  "author" : {
+    "name" : "Jean-Sebastien Cote",
+    "email" : "jean.sebastien.cote@gmail.com"
+  },
+  "dependencies": {
+    "lodash": "^2.4.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/jscote/identifier"
+  },
+  "engines": {
+    "node": "*"
+  }
+
+}
