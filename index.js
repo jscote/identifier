@@ -173,6 +173,29 @@
 
     };
 
+    identifiers.identifierExists = function(identifier) {
+        if(!_.isString(identifier)) throw Error('Identifier should be a string');
+
+        var client = new es.Client({host: 'localhost:9200'});
+        var dfd = q.defer();
+
+        client.exists({
+            index: 'identifiers',
+            type: 'identifier',
+            id: identifier
+        }).then(function(exists){
+            dfd.resolve(exists);
+        }).catch(function(error) {
+            dfd.reject(error);
+        }).finally(function() {
+            client.close();
+        });
+
+
+        return dfd.promise;
+
+    };
+
     module.exports.SupportedTypes = supportedTypes;
     module.exports.Identifiers = identifiers;
 

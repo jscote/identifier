@@ -52,8 +52,18 @@ module.exports = {
                 test.done();
             });
         });
-
-
+    },
+    identifiers_exists_withValidId_willReturnTrue : function(test) {
+        base.Identifiers.identifierExists('smtg-0470126e-31d7-4f81-bc11-05381c40f90e').then(function (doesExist) {
+            test.ok(doesExist, 'should exist');
+            test.done();
+        });
+    },
+    identifiers_exists_withInvalidId_willReturnFalse : function(test) {
+        base.Identifiers.identifierExists('blah').then(function(doesExist) {
+            test.ok(!doesExist, 'should not exist');
+            test.done();
+        });
     }
 
 };
