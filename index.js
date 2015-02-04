@@ -46,20 +46,21 @@
 
                     }).then(function (response) {
                         console.log(response);
-                        if(response.hits.total == 0) {
+                        if (response.hits.total == 0) {
                             client.create({
                                 index: 'identifiers',
                                 type: 'supportedType',
                                 id: type,
-                                body : {identifierType: type, abbreviation: abbreviation}
+                                body: {identifierType: type, abbreviation: abbreviation}
                             }).then(function () {
                                 internalTypes[type] = abbreviation;
                                 client.close();
-                            }).catch(function(error) {
+                            }).catch(function (error) {
                                 console.log(error);
                                 client.close();
                             });
                         } else {
+                            client.close();
                             throw Error("Abbreviation Already Exist");
                         }
                         client.close();
@@ -77,9 +78,13 @@
 
     supportedTypes.getType = function (type) {
         if (!_.isString(type)) throw Error("type is not a string");
-        if (!_.isUndefined(internalTypes[type])) return {identifierType: type, abbreviation: internalTypes[type]};
 
         var dfd = q.defer();
+        if (!_.isUndefined(internalTypes[type])) {
+            dfd.resolve({identifierType: type, abbreviation: internalTypes[type]});
+            return dfd.promise;
+        }
+
 
         var client = new es.Client({
             host: 'localhost:9200'
@@ -99,7 +104,77 @@
 
     };
 
+    var maxCacheSize = 10;
+    var cachedIdentifiers = {};
+    var identifiers = function () {
+    };
+
+    function resolveId(supportedType, dfd) {
+        var idToReturn = cachedIdentifiers[supportedType].splice(0, 1);
+        if (idToReturn.length > 0) {
+            dfd.resolve(idToReturn[0]._id);
+        } else {
+            dfd.reject('No more id to retrieve');
+        }
+    }
+
+    identifiers.getNextId = function (type) {
+
+        var dfd = q.defer();
+
+        supportedTypes.getType(type).then(function (supportedType) {
+
+            if (_.isUndefined(cachedIdentifiers[supportedType])) {
+                cachedIdentifiers[supportedType] = [];
+            }
+
+            if (cachedIdentifiers[supportedType].length == 0) {
+                //Fill in the cache
+
+                var promises = [];
+
+                var client = new es.Client({host: 'localhost:9200'});
+
+                try {
+                    for (var i = 0; i < maxCacheSize; i++) {
+                        (function (p, id) {
+                            p.push(client.create({
+                                index: 'identifiers',
+                                type: 'identifier',
+                                id: id,
+                                body: {identifier: id}
+                            }));
+                        })(promises, supportedType.abbreviation + '-' + generateUUID());
+                    }
+
+                    q.all(promises).then(function (ids) {
+                        cachedIdentifiers[supportedType] = ids;
+                        resolveId(supportedType, dfd);
+                    }).catch(function (error) {
+                        console.log(error);
+                    }).finally(function(){
+                        client.close();
+                    });
+                }
+                catch(e) {
+                    dfd.reject(e);
+                }
+
+            } else {
+                resolveId(supportedType, dfd);
+            }
+
+
+        }).catch(function () {
+            dfd.reject("Unsupported type")
+        });
+
+        return dfd.promise;
+
+    };
+
     module.exports.SupportedTypes = supportedTypes;
+    module.exports.Identifiers = identifiers;
 
 
 })(require('lodash'), require('q'), require('elasticsearch'));
