@@ -53,15 +53,77 @@ module.exports = {
             });
         });
     },
-    identifiers_exists_withValidId_willReturnTrue : function(test) {
+    identifiers_exists_withValidId_willReturnTrue: function (test) {
         base.Identifiers.identifierExists('smtg-0470126e-31d7-4f81-bc11-05381c40f90e').then(function (doesExist) {
             test.ok(doesExist, 'should exist');
             test.done();
         });
     },
-    identifiers_exists_withInvalidId_willReturnFalse : function(test) {
-        base.Identifiers.identifierExists('blah').then(function(doesExist) {
+    identifiers_exists_withInvalidId_willReturnFalse: function (test) {
+        base.Identifiers.identifierExists('blah').then(function (doesExist) {
             test.ok(!doesExist, 'should not exist');
+            test.done();
+        });
+    },
+    configuration_withInvalidConnection_willNotAllowToWork: function (test) {
+
+        base.Configuration({connectionConfiguration: {host: "invalidHost"}});
+
+        base.Identifiers.identifierExists("something").then(function () {
+            test.ok(false);
+            test.done();
+        }).fail(function (error) {
+            test.ok(error.message == "No Living connections");
+            test.ok(true);
+            test.done();
+        });
+    },
+    configuration_withValidConnection_willWork: function (test) {
+
+        base.Configuration({connectionConfiguration: {host: "localhost:9200"}});
+
+        base.Identifiers.identifierExists("something").then(function () {
+            test.ok(true);
+            test.done();
+        }).fail(function (error) {
+            test.ok(error.message == "No Living connections");
+            test.ok(false);
+            test.done();
+        });
+    },
+    configuration_withSupportedTypes_willWork: function (test) {
+        base.Configuration({
+            connectionConfiguration: {host: "localhost:9200"},
+            supportedTypes: [{supportedType: "something", abbreviation: "smtg"}]
+        }).then(function () {
+            test.ok(true);
+            test.done();
+        }).fail(function () {
+            test.ok(false);
+            test.done();
+        });
+    },
+    configuration_withOneSupportedTypes_willWork: function (test) {
+        base.Configuration({
+            connectionConfiguration: {host: "localhost:9200"},
+            supportedTypes: {supportedType: "something", abbreviation: "smtg"}
+        }).then(function () {
+            test.ok(true);
+            test.done();
+        }).fail(function () {
+            test.ok(false);
+            test.done();
+        });
+    },
+    configuration_withInvalidSupportedTypes_willNotWork: function (test) {
+        base.Configuration({
+            connectionConfiguration: {host: "localhost:9200"},
+            supportedTypes: ""
+        }).then(function () {
+            test.ok(false);
+            test.done();
+        }).fail(function () {
+            test.ok(true);
             test.done();
         });
     }

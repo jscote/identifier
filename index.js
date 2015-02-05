@@ -13,18 +13,61 @@
     };
 
     var internalTypes = {};
+    var maxCacheSize = 10;
+    var cachedIdentifiers = {};
+    var internalConfiguration = {connectionConfiguration: {host: 'localhost:9200'}};
+
+    var ConnectionConfiguration = function (config) {
+        for (var prop in config) {
+            this[prop] = config[prop];
+        }
+    };
+
+    var configuration = function (config) {
+
+        internalConfiguration = config || {};
+        internalConfiguration.connectionConfiguration = config.connectionConfiguration || {host: 'localhost:9200'};
+        maxCacheSize = _.isUndefined(config.maxCacheSize) ? 10 : config.maxCacheSize;
+
+        var dfd = q.defer();
+
+        if (!_.isUndefined(config.supportedTypes)) {
+            var promises = [];
+            if (_.isArray(config.supportedTypes)) {
+                for (var i = 0; i < config.supportedTypes.length; i++) {
+                    promises.push(supportedTypes.addType(config.supportedTypes[i].supportedType, config.supportedTypes[i].abbreviation))
+                }
+                q.all(promises).then(function() {
+                    dfd.resolve();
+                }).fail(function(error) {
+                    dfd.reject(error);
+                });
+            } else if (_.isObject(config.supportedTypes)) {
+                supportedTypes.addType(config.supportedTypes.supportedType, config.supportedTypes.abbreviation).then(function () {
+                    dfd.resolve();
+                });
+            }
+            else {
+                dfd.reject("Configured Supported Types is not valid");
+            }
+
+        } else {
+            dfd.resolve();
+        }
+
+        return dfd.promise;
+    };
 
     var supportedTypes = function SupportedTypes() {
     };
 
     supportedTypes.addType = function (type, abbreviation) {
+        var dfd = q.defer();
         if (!_.isString(type)) throw Error("type is not a string");
         if (!_.isString(abbreviation)) throw Error("abbreviation is not a string");
         if (abbreviation.length > 4) throw Error("abbreviation should not be more than 4 characters");
 
-        var client = new es.Client({
-            host: 'localhost:9200'
-        });
+        var client = new es.Client(new ConnectionConfiguration(internalConfiguration.connectionConfiguration));
 
         var parameters = {index: 'identifiers', type: 'supportedType', id: type};
 
@@ -34,6 +77,7 @@
             client.get(parameters).then(function (response) {
                 console.log(response);
                 internalTypes[response._source.identifierType] = response._source.abbreviation;
+                dfd.resolve();
                 client.close();
             }).catch(function (error) {
                 if (error.status == 404) {
@@ -58,8 +102,10 @@
                             }).catch(function (error) {
                                 console.log(error);
                                 client.close();
+                                dfd.resolve();
                             });
                         } else {
+                            dfd.resolve();
                             client.close();
                             throw Error("Abbreviation Already Exist");
                         }
@@ -67,12 +113,17 @@
                     }).catch(function (error) {
                         console.log(error);
                         client.close();
+                        dfd.resolve();
                     });
 
                 }
             });
 
+        } else {
+            dfd.resolve();
         }
+
+        return dfd.promise;
 
     };
 
@@ -85,10 +136,7 @@
             return dfd.promise;
         }
 
-
-        var client = new es.Client({
-            host: 'localhost:9200'
-        });
+        var client = new es.Client(new ConnectionConfiguration(internalConfiguration.connectionConfiguration));
 
         var parameters = {index: 'identifiers', type: 'supportedType', id: type};
         client.get(parameters).then(function (response) {
@@ -104,8 +152,7 @@
 
     };
 
-    var maxCacheSize = 10;
-    var cachedIdentifiers = {};
+
     var identifiers = function () {
     };
 
@@ -133,7 +180,7 @@
 
                 var promises = [];
 
-                var client = new es.Client({host: 'localhost:9200'});
+                var client = new es.Client(new ConnectionConfiguration(internalConfiguration.connectionConfiguration));
 
                 try {
                     for (var i = 0; i < maxCacheSize; i++) {
@@ -152,11 +199,11 @@
                         resolveId(supportedType, dfd);
                     }).catch(function (error) {
                         console.log(error);
-                    }).finally(function(){
+                    }).finally(function () {
                         client.close();
                     });
                 }
-                catch(e) {
+                catch (e) {
                     dfd.reject(e);
                 }
 
@@ -173,21 +220,21 @@
 
     };
 
-    identifiers.identifierExists = function(identifier) {
-        if(!_.isString(identifier)) throw Error('Identifier should be a string');
+    identifiers.identifierExists = function (identifier) {
+        if (!_.isString(identifier)) throw Error('Identifier should be a string');
 
-        var client = new es.Client({host: 'localhost:9200'});
+        var client = new es.Client(new ConnectionConfiguration(internalConfiguration.connectionConfiguration));
         var dfd = q.defer();
 
         client.exists({
             index: 'identifiers',
             type: 'identifier',
             id: identifier
-        }).then(function(exists){
+        }).then(function (exists) {
             dfd.resolve(exists);
-        }).catch(function(error) {
+        }).catch(function (error) {
             dfd.reject(error);
-        }).finally(function() {
+        }).finally(function () {
             client.close();
         });
 
@@ -198,6 +245,7 @@
 
     module.exports.SupportedTypes = supportedTypes;
     module.exports.Identifiers = identifiers;
+    module.exports.Configuration = configuration;
 
 
 })(require('lodash'), require('q'), require('elasticsearch'));
