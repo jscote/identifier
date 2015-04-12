@@ -1,6 +1,6 @@
 {
   "name": "jsai-identifier",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "utility for managing identifiers.",
   "author": {
     "name": "Jean-Sebastien Cote",

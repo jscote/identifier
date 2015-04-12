@@ -157,7 +157,7 @@
     };
 
     function resolveId(supportedType, dfd) {
-        var idToReturn = cachedIdentifiers[supportedType].splice(0, 1);
+        var idToReturn = cachedIdentifiers[supportedType.identifierType].splice(0, 1);
         if (idToReturn.length > 0) {
             dfd.resolve(idToReturn[0]._id);
         } else {
@@ -171,11 +171,11 @@
 
         supportedTypes.getType(type).then(function (supportedType) {
 
-            if (_.isUndefined(cachedIdentifiers[supportedType])) {
-                cachedIdentifiers[supportedType] = [];
+            if (_.isUndefined(cachedIdentifiers[supportedType.identifierType])) {
+                cachedIdentifiers[supportedType.identifierType] = [];
             }
 
-            if (cachedIdentifiers[supportedType].length == 0) {
+            if (cachedIdentifiers[supportedType.identifierType].length == 0) {
                 //Fill in the cache
 
                 var promises = [];
@@ -195,7 +195,7 @@
                     }
 
                     q.all(promises).then(function (ids) {
-                        cachedIdentifiers[supportedType] = ids;
+                        cachedIdentifiers[supportedType.identifierType] = ids;
                         resolveId(supportedType, dfd);
                     }).catch(function (error) {
                         console.log(error);
