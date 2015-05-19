@@ -65,6 +65,24 @@ module.exports = {
             test.done();
         });
     },
+    identifier_insert_withValidSupportedType_willReturnId: function (test) {
+        var ids = Date().toString();
+        base.Identifiers.insertId("something", ids).then(function (id) {
+            test.ok(ids == id);
+            test.done();
+        });
+    },
+    identifier_insert_withInvalidSupportedType_willBeRejected: function (test) {
+        var ids = Date().toString();
+        base.Identifiers.insertId("blah", ids).then(function (id) {
+            test.ok(false, "should not be here");
+            test.done();
+        }).fail(function (error) {
+            console.log(error);
+            test.ok(error == "Unsupported type");
+            test.done();
+        });
+    },
     configuration_withInvalidConnection_willNotAllowToWork: function (test) {
 
         base.Configuration({connectionConfiguration: {host: "invalidHost"}});

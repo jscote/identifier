@@ -37,9 +37,9 @@
                 for (var i = 0; i < config.supportedTypes.length; i++) {
                     promises.push(supportedTypes.addType(config.supportedTypes[i].supportedType, config.supportedTypes[i].abbreviation))
                 }
-                q.all(promises).then(function() {
+                q.all(promises).then(function () {
                     dfd.resolve();
-                }).fail(function(error) {
+                }).fail(function (error) {
                     dfd.reject(error);
                 });
             } else if (_.isObject(config.supportedTypes)) {
@@ -164,6 +164,37 @@
             dfd.reject('No more id to retrieve');
         }
     }
+
+    identifiers.insertId = function (type, id) {
+
+        var dfd = q.defer();
+
+        supportedTypes.getType(type).then(function (supportedType) {
+
+
+            var client = new es.Client(new ConnectionConfiguration(internalConfiguration.connectionConfiguration));
+            client.create({
+                index: 'identifiers',
+                type: 'identifier',
+                id: id,
+                body: {identifier: id}
+            }).then(function (ident) {
+                dfd.resolve(id);
+            }).catch(function (error) {
+                console.log(error);
+                dfd.reject(error);
+            }).finally(function () {
+                client.close();
+            });
+
+
+        }).catch(function () {
+            dfd.reject("Unsupported type")
+        });
+
+        return dfd.promise;
+
+    };
 
     identifiers.getNextId = function (type) {
 
